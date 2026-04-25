@@ -1,0 +1,469 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Card.Club | Путь партнёра v4.0</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;700&family=Unbounded:wght@400;600;800&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg: #0B0E14;
+            --bg-grad: radial-gradient(circle at 15% 20%, rgba(139,92,246,0.08) 0%, transparent 35%),
+                       radial-gradient(circle at 85% 80%, rgba(59,130,246,0.06) 0%, transparent 35%);
+            --card: #151922;
+            --card-border: #2A2F3A;
+            --card-hover: #1C212E;
+            --text-main: #E5E7EB;
+            --text-muted: #9CA3AF;
+            --gold: #F59E0B;
+            --purple: #8B5CF6;
+            --blue: #3B82F6;
+            --green: #10B981;
+            --red: #EF4444;
+            --glass: rgba(21, 25, 34, 0.85);
+            --shadow-sm: 0 4px 12px rgba(0,0,0,0.3);
+            --shadow-md: 0 8px 24px rgba(0,0,0,0.4);
+            --shadow-lg: 0 16px 32px rgba(0,0,0,0.5);
+            --radius: 16px;
+            --radius-sm: 10px;
+            --transition: all 0.35s cubic-bezier(0.4, 0, 0.2, 1);
+            --font-main: 'Inter', sans-serif;
+            --font-display: 'Unbounded', sans-serif;
+            --font-mono: 'JetBrains Mono', monospace;
+        }
+        * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+        body { font-family: var(--font-main); background: var(--bg); background-image: var(--bg-grad); color: var(--text-main); line-height: 1.5; min-height: 100vh; overflow-x: hidden; }
+        
+        /* HUD */
+        .hud { position: fixed; top: 0; left: 0; width: 100%; background: var(--glass); backdrop-filter: blur(14px); border-bottom: 1px solid var(--card-border); padding: 12px 20px; display: flex; justify-content: space-between; align-items: center; z-index: 100; box-shadow: var(--shadow-sm); }
+        .hud-left { display: flex; align-items: center; gap: 12px; }
+        .hud-right { display: flex; align-items: center; gap: 14px; }
+        .rank-badge { background: linear-gradient(135deg, var(--purple), var(--blue)); color: #fff; padding: 5px 12px; border-radius: 20px; font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.6px; box-shadow: 0 2px 8px rgba(139,92,246,0.3); }
+        .xp-track { width: 100px; height: 5px; background: #2A2F3A; border-radius: 3px; overflow: hidden; }
+        .xp-fill { height: 100%; width: 0%; background: linear-gradient(90deg, var(--green), var(--gold)); transition: width 0.6s ease; }
+        .hud-stat { font-family: var(--font-mono); font-size: 13px; font-weight: 600; color: var(--text-muted); }
+        .hud-income { color: var(--green); }
+
+        /* Layout & Screens */
+        .app-wrap { max-width: 680px; margin: 0 auto; padding: 85px 20px 40px; min-height: 100vh; display: flex; flex-direction: column; justify-content: center; }
+        .screen { display: none; opacity: 0; transform: translateY(20px) scale(0.98); transition: opacity 0.4s ease, transform 0.4s ease; }
+        .screen.active { display: block; opacity: 1; transform: translateY(0) scale(1); }
+
+        h1, h2, h3 { font-family: var(--font-display); color: #fff; margin-bottom: 12px; }
+        h1 { font-size: 26px; line-height: 1.15; background: linear-gradient(90deg, #fff, var(--gold)); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+        h2 { font-size: 21px; }
+        p { color: var(--text-muted); margin-bottom: 20px; font-size: 15px; }
+
+        /* Cards & Interactives */
+        .opt-card { background: var(--card); border: 1px solid var(--card-border); border-radius: var(--radius); padding: 18px; margin-bottom: 12px; cursor: pointer; transition: var(--transition); position: relative; }
+        .opt-card:hover { transform: translateY(-2px); box-shadow: var(--shadow-md); border-color: var(--blue); background: var(--card-hover); }
+        .opt-card.selected { border-color: var(--gold); background: rgba(245,158,11,0.08); box-shadow: 0 0 0 1px var(--gold); }
+        .opt-card.selected::after { content: '✓'; position: absolute; top: 16px; right: 16px; color: var(--gold); font-weight: 800; font-size: 14px; }
+        .opt-title { font-weight: 600; font-size: 15px; margin-bottom: 4px; color: #fff; }
+        .opt-desc { font-size: 13px; color: var(--text-muted); line-height: 1.4; }
+        .opt-meta { margin-top: 8px; font-size: 12px; font-weight: 600; }
+
+        /* Buttons */
+        .btn { display: flex; align-items: center; justify-content: center; width: 100%; background: linear-gradient(135deg, var(--blue), var(--purple)); color: #fff; padding: 16px; border-radius: 12px; font-weight: 600; font-size: 15px; border: none; cursor: pointer; margin-top: 20px; transition: var(--transition); box-shadow: 0 4px 12px rgba(59,130,246,0.3); }
+        .btn:hover { transform: translateY(-1px); box-shadow: 0 6px 16px rgba(59,130,246,0.4); }
+        .btn:disabled { background: #374151; cursor: not-allowed; transform: none; box-shadow: none; }
+        .btn-sec { background: transparent; color: var(--blue); border: 1px solid var(--blue); box-shadow: none; }
+        .btn-sec:hover { background: rgba(59,130,246,0.1); }
+        .btn-gold { background: linear-gradient(135deg, var(--gold), #D97706); box-shadow: 0 4px 12px rgba(245,158,11,0.3); }
+        .btn-gold:hover { box-shadow: 0 6px 16px rgba(245,158,11,0.4); }
+
+        /* Sliders & Inputs */
+        .slider-box { background: var(--card); padding: 18px; border-radius: var(--radius); margin-bottom: 16px; border: 1px solid var(--card-border); }
+        .slider-header { display: flex; justify-content: space-between; margin-bottom: 10px; font-weight: 600; font-size: 14px; color: #fff; }
+        input[type=range] { width: 100%; height: 6px; background: #2A2F3A; border-radius: 4px; outline: none; appearance: none; }
+        input[type=range]::-webkit-slider-thumb { appearance: none; width: 22px; height: 22px; background: #fff; border: 3px solid var(--blue); border-radius: 50%; cursor: pointer; box-shadow: 0 2px 6px rgba(59,130,246,0.4); transition: transform 0.2s; }
+        input[type=range]::-webkit-slider-thumb:hover { transform: scale(1.15); }
+        .input-field { width: 100%; padding: 12px 14px; background: #1C212E; border: 1px solid var(--card-border); border-radius: 8px; color: #fff; font-family: var(--font-main); font-size: 14px; margin: 10px 0; }
+        .input-field:focus { outline: none; border-color: var(--blue); }
+
+        /* Info & Comparison Blocks */
+        .info-box { background: rgba(59,130,246,0.1); border-left: 3px solid var(--blue); padding: 12px; border-radius: 0 8px 8px 0; margin: 12px 0; font-size: 13px; color: #93C5FD; }
+        .info-box strong { color: #BFDBFE; }
+        .compare-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin: 14px 0; }
+        .compare-card { padding: 12px; border-radius: 10px; text-align: center; font-size: 13px; border: 1px solid var(--card-border); }
+        .compare-old { background: rgba(239,68,68,0.1); color: #FCA5A5; }
+        .compare-new { background: rgba(16,185,129,0.1); color: #6EE7B7; font-weight: 600; border-color: var(--green); }
+
+        /* Chart & Live Feed */
+        .chart-wrap { height: 130px; display: flex; align-items: flex-end; gap: 10px; margin: 16px 0; padding: 0 4px; }
+        .chart-bar { flex: 1; background: #2A2F3A; border-radius: 6px 6px 0 0; transition: height 0.7s cubic-bezier(0.34,1.56,0.64,1); position: relative; min-height: 12px; }
+        .chart-bar.active { background: linear-gradient(to top, var(--blue), var(--purple)); box-shadow: 0 0 10px rgba(139,92,246,0.3); }
+        .chart-label { position: absolute; bottom: -18px; left: 50%; transform: translateX(-50%); font-size: 10px; color: var(--text-muted); white-space: nowrap; }
+        .live-feed { background: var(--card); border: 1px solid var(--card-border); border-radius: 10px; padding: 10px 14px; margin: 12px 0; font-size: 12px; color: var(--text-muted); display: flex; align-items: center; gap: 8px; }
+        .live-dot { width: 8px; height: 8px; background: var(--green); border-radius: 50%; animation: pulse 1.5s infinite; }
+        @keyframes pulse { 0%,100% { opacity: 1; } 50% { opacity: 0.4; } }
+
+        /* Modals & Toast */
+        .modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.6); backdrop-filter: blur(6px); display: flex; align-items: center; justify-content: center; z-index: 200; opacity: 0; pointer-events: none; transition: opacity 0.3s; }
+        .modal-overlay.show { opacity: 1; pointer-events: auto; }
+        .modal-card { background: var(--card); padding: 24px; border-radius: 16px; max-width: 340px; text-align: center; box-shadow: var(--shadow-lg); transform: scale(0.95); transition: transform 0.3s; border-top: 3px solid var(--gold); }
+        .modal-overlay.show .modal-card { transform: scale(1); }
+        .toast { position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%) translateY(80px); background: #1F2937; color: #fff; padding: 12px 20px; border-radius: 30px; font-size: 14px; font-weight: 500; box-shadow: var(--shadow-lg); opacity: 0; transition: all 0.4s cubic-bezier(0.4,0,0.2,1); z-index: 300; pointer-events: none; border: 1px solid var(--card-border); }
+        .toast.show { transform: translateX(-50%) translateY(0); opacity: 1; }
+
+        /* Final & Promise */
+        .stat-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 16px; }
+        .stat-box { background: var(--card); padding: 16px; border-radius: 12px; border: 1px solid var(--card-border); text-align: center; }
+        .stat-val { font-family: var(--font-mono); font-size: 20px; font-weight: 700; color: #fff; }
+        .stat-val.accent { color: var(--gold); }
+        .reality-break { background: rgba(239,68,68,0.1); border-left: 4px solid var(--red); padding: 14px; border-radius: 0 8px 8px 0; margin: 16px 0; }
+        .reality-break strong { color: #FCA5A5; }
+        .promise-box { background: var(--card); border: 1px dashed #4B5563; padding: 20px; border-radius: var(--radius); margin-top: 16px; }
+        .promise-text { background: #1C212E; padding: 12px; border-radius: 8px; font-size: 13px; color: var(--text-main); margin: 10px 0; font-style: italic; border: 1px solid var(--card-border); white-space: pre-wrap; }
+        .copy-btn { background: transparent; border: none; color: var(--blue); font-weight: 600; cursor: pointer; font-size: 13px; padding: 4px 0; }
+        .copy-btn:hover { text-decoration: underline; }
+        .promise-links { margin-top: 12px; display: flex; gap: 10px; }
+        .link-btn { flex: 1; text-align: center; padding: 10px; border-radius: 8px; text-decoration: none; font-size: 13px; font-weight: 500; transition: var(--transition); }
+        .link-tg { background: rgba(59,130,246,0.15); color: #93C5FD; }
+        .link-email { background: rgba(107,114,128,0.15); color: #D1D5DB; }
+        .link-btn:hover { transform: translateY(-1px); opacity: 0.9; }
+
+        @media (max-width: 480px) {
+            h1 { font-size: 23px; } .hud { padding: 10px 16px; } .rank-badge { font-size: 10px; padding: 4px 10px; } .hud-stat { font-size: 12px; } .compare-grid { grid-template-columns: 1fr; }
+        }
+    </style>
+</head>
+<body>
+
+    <header class="hud">
+        <div class="hud-left">
+            <span class="rank-badge" id="hud-rank">STARTER</span>
+            <div class="xp-track"><div class="xp-fill" id="hud-xp"></div></div>
+        </div>
+        <div class="hud-right">
+            <span class="hud-stat" id="hud-cards">Карт: 0</span>
+            <span class="hud-stat hud-income" id="hud-income">$0</span>
+        </div>
+    </header>
+
+    <main class="app-wrap">
+        <!-- 1. Welcome -->
+        <section id="s1" class="screen active">
+            <h1>Ваш актив — база клиентов. Давайте её монетизируем.</h1>
+            <p>Card.Club — виртуальные международные карты USD/EUR для оплат по всему миру. Ваши клиенты уже ищут способ платить за Booking, ChatGPT, Amazon и зарубежные сервисы. Вы даёте решение и получаете <b>50% с каждого выпуска</b>. Без найма, договоров и отчётности.</p>
+            <div class="info-box">
+                <strong>💡 Почему это работает сейчас?</strong> Рынок зарубежных платежей растёт, а российские карты не работают. Вы не продаёте пластик — вы закрываете боль клиента и превращаете существующую базу в предсказуемый доход.
+            </div>
+            <button class="btn" onclick="router.go('s2')">Рассчитать мой сценарий →</button>
+        </section>
+
+        <!-- 2. Persona -->
+        <section id="s2" class="screen">
+            <h2>Давайте знакомиться</h2>
+            <p>Расскажите о своём бизнесе. Мы подставим <b>вашу</b> базу и покажем, сколько <b>лично вы</b> можете заработать. Цифры будут про вас.</p>
+            
+            <div class="slider-box">
+                <div class="slider-header"><span>Клиентов в базе / год</span><span id="base-val">500</span></div>
+                <input type="range" id="base-slider" min="50" max="50000" value="500" step="50">
+            </div>
+
+            <div class="opt-card" onclick="logic.setPersona('tour', 500, this)">✈️ Турагентство<div class="opt-desc">Клиенты летают → им нужны зарубежные платежи. Высокая лояльность.</div></div>
+            <div class="opt-card" onclick="logic.setPersona('visa', 1500, this)">🛂 Визовый центр<div class="opt-desc">Большой поток. Карта решает оплату сборов и сервисов.</div></div>
+            <div class="opt-card" onclick="logic.setPersona('realty', 100, this)">🏠 Зарубежная недвижимость<div class="opt-desc">Крупные сделки. Клиенты ценят премиум-сервис и скорость.</div></div>
+            <div class="opt-card" onclick="logic.setPersona('blogger', 30000, this)">📱 Блогер / Инфлюенсер<div class="opt-desc">Масштаб. Даже низкая конверсия на 30к даёт объём.</div></div>
+        </section>
+
+        <!-- 3. First Card (FIXED) -->
+        <section id="s3" class="screen">
+            <h2>🎉 Кабинет активирован</h2>
+            <p>Персональная ссылка готова. Чтобы уверенно рекомендовать продукт, успешные партнёры сначала пробуют его на себе. Что хотите оплатить первым делом?</p>
+            
+            <div class="opt-card" id="card-self" onclick="logic.setFirstCard('self', this)">
+                <div class="opt-title">🧪 Себе — протестировать</div>
+                <div class="opt-desc">ChatGPT Plus, Midjourney, Booking, Spotify, хостинг, реклама. Поймёте продукт изнутри и станете убедительнее.</div>
+                <div class="opt-meta" style="color:var(--green);">+100 XP · Скидка 50% на свою карту · Ачивка «Самотестер»</div>
+            </div>
+            <div class="opt-card" id="card-client" onclick="logic.setFirstCard('client', this)">
+                <div class="opt-title">🎯 Сразу клиенту</div>
+                <div class="opt-desc">Быстрый старт, но без личного опыта. Сложнее отвечать на вопросы и продавать ценность.</div>
+                <div class="opt-meta" style="color:var(--text-muted);">+40 XP · Стандартная комиссия</div>
+            </div>
+
+            <div class="info-box" style="margin-top: 16px;">
+                <strong>Почему клиенты выбирают вас:</strong> Выпуск за 2 минуты. Работает сразу по всему миру. Без справок, очередей и ожидания 10–30 дней как в КЗ/КГ. Вы даёте решение «здесь и сейчас» → получаете комиссию мгновенно.
+            </div>
+        </section>
+
+        <!-- 4. Pricing & Strategy -->
+        <section id="s4" class="screen">
+            <h2>Шаг 4. Цена и стратегия касания</h2>
+            <p>Выберите, как позиционировать продукт. Цена влияет на восприятие и вашу комиссию.</p>
+            
+            <div class="slider-box">
+                <div class="slider-header"><span>Цена карты для клиента</span><span id="price-val" style="color:var(--gold)">$35</span></div>
+                <input type="range" id="price-slider" min="20" max="200" value="35" step="5">
+                <div style="font-size:12px; color:var(--text-muted); margin-top:6px;">Ваша комиссия: <span id="comm-val">$17.5</span> (50% от выпуска)</div>
+            </div>
+
+            <div class="compare-grid">
+                <div class="compare-card compare-old">🇰🇿/🇰🇬 Аналоги<br>$250–300 · 10–30 дней · Бюрократия</div>
+                <div class="compare-card compare-new">✅ Ваша карта<br>$<span id="cmp-price">35</span> · 2 минуты · Мгновенно</div>
+            </div>
+
+            <div class="opt-card" onclick="logic.setStrategy('premium', 0.06, this)">💎 Премиум ($50+)<div class="opt-desc">Выше цена = выше ценность. Клиент платит за скорость и отсутствие головной боли.</div><div style="font-size:12px; color:var(--text-muted); margin-top:4px;">Конверсия: ~6%</div></div>
+            <div class="opt-card" onclick="logic.setStrategy('mass', 0.12, this)">📢 Массовый охват ($20–35)<div class="opt-desc">Доступная цена для большого потока. Идеально для блогеров и визовых центров.</div><div style="font-size:12px; color:var(--text-muted); margin-top:4px;">Конверсия: ~12%</div></div>
+            <div class="opt-card" onclick="logic.setStrategy('bundle', 0.22, this)">🎁 В пакете услуг<div class="opt-desc">Карта идёт бонусом к туру/визе. Клиент не видит отдельную цену.</div><div style="font-size:12px; color:var(--text-muted); margin-top:4px;">Конверсия: ~22%</div></div>
+        </section>
+
+        <!-- 5. Actions & Growth -->
+        <section id="s5" class="screen">
+            <h2>📊 Первые результаты</h2>
+            <p>Вы запустили процесс. Теперь управляйте им. Каждое действие приближает к цели.</p>
+            
+            <div class="stat-grid">
+                <div class="stat-box"><div class="stat-label" style="font-size:11px;">Выпущено карт</div><div class="stat-val" id="stat-cards">0</div></div>
+                <div class="stat-box"><div class="stat-label" style="font-size:11px;">Ваш доход</div><div class="stat-val accent" id="stat-income">$0</div></div>
+            </div>
+
+            <div class="chart-wrap" id="income-chart">
+                <div class="chart-bar" style="height: 10%;"><span class="chart-label">Старт</span></div>
+                <div class="chart-bar active" style="height: 25%;"><span class="chart-label">Запуск</span></div>
+                <div class="chart-bar" style="height: 25%;"><span class="chart-label">?</span></div>
+                <div class="chart-bar" style="height: 25%;"><span class="chart-label">?</span></div>
+            </div>
+
+            <div class="live-feed" id="live-feed"><span class="live-dot"></span><span id="feed-text">Ожидание первого касания...</span></div>
+
+            <button class="btn btn-sec" id="btn-mats" onclick="logic.getMaterials()">📥 Забрать промо-материалы (+конверсия)</button>
+            <button class="btn" id="btn-campaign" onclick="logic.runCampaign()" disabled>📢 Сделать новое касание базы</button>
+            <p style="font-size:12px; color:var(--text-muted); margin-top:10px; text-align:center;">После получения материалов кнопка активации станет доступна.</p>
+        </section>
+
+        <!-- 6. Final -->
+        <section id="s6" class="screen">
+            <h2>🚀 Вот где вы будете через 90 дней</h2>
+            <p>Математика не врет. Если вы выполните шаги выше, цифры будут именно такими.</p>
+            
+            <div class="stat-grid">
+                <div class="stat-box"><div class="stat-label" style="font-size:11px;">За 3 месяца</div><div class="stat-val" id="fin-3m">$0</div></div>
+                <div class="stat-box"><div class="stat-label" style="font-size:11px;">Прогноз 12 мес.</div><div class="stat-val accent" id="fin-12m">$0</div></div>
+            </div>
+
+            <div class="reality-break">
+                <strong>⏳ Каждый день промедления стоит вам</strong><br>
+                <span id="lost-inc" style="font-weight:700; color:var(--red);">$0</span> в день. Пока вы думаете, конкуренты уже подключают карту и забирают лояльность ваших клиентов.
+            </div>
+
+            <div class="promise-box">
+                <h3>✉️ Моё обещание себе</h3>
+                <div class="promise-text" id="promise-text"></div>
+                <button class="copy-btn" onclick="utils.copyPromise()">📋 Скопировать текст</button>
+                <div class="promise-links">
+                    <a id="link-tg-self" href="#" target="_blank" class="link-btn link-tg">Отправить себе в ТГ</a>
+                    <a id="link-email" href="#" class="link-btn link-email">Напоминание на почту</a>
+                </div>
+            </div>
+
+            <a href="#" id="cta-vladi" target="_blank" class="btn btn-gold" style="margin-top:24px;">Написать Владимиру и получить материалы</a>
+            <div style="font-size:12px; color:var(--text-muted); margin-top:8px; text-align:center;">15 мин созвон. Настроим кабинет, покажем кейсы, запустим первую рассылку.</div>
+        </section>
+    </main>
+
+    <!-- Achievement Modal -->
+    <div class="modal-overlay" id="ach-modal" onclick="this.classList.remove('show')">
+        <div class="modal-card" onclick="event.stopPropagation()">
+            <div style="font-size:36px; margin-bottom:12px;" id="ach-icon">🏆</div>
+            <h3 style="margin-bottom:8px;">Достижение разблокировано</h3>
+            <p style="font-size:14px; margin-bottom:16px;" id="ach-text">Ваш доход уже покрывает подписку на свежие цветы каждую неделю. Представьте, что будет на следующем шаге.</p>
+            <button class="btn" onclick="document.getElementById('ach-modal').classList.remove('show')">Принять и продолжить →</button>
+        </div>
+    </div>
+
+    <!-- Toast -->
+    <div class="toast" id="toast"></div>
+
+    <script>
+        /* ================= ARCHITECTURE v4.0 ================= */
+        const CONFIG = {
+            ranks: [{n:'STARTER',x:0},{n:'PRO',x:120},{n:'EXPERT',x:280},{n:'ELITE',x:500}],
+            ltvBase: 1.15,
+            feedNames: ['Максим из СПб','Анна (Визы)','Турагентство Юг','Блогер @travel','Агентство Недвижимости','Визовый центр МСК'],
+            achTiers: [
+                {min:0, icon:'🌸', text:'Ваш доход покрывает подписку на свежие цветы каждую неделю в офис или домой.'},
+                {min:1500, icon:'🏋️‍♂️', text:'Вы оплатили личного тренера или бизнес-наставника на месяц.'},
+                {min:5000, icon:'🌴', text:'Отпуск мечты на песчаном пляже уже в пределах досягаемости.'},
+                {min:12000, icon:'✈️', text:'VIP-зал в аэропорту + Бизнес-класс стали вашей нормой.'},
+                {min:25000, icon:'🚘', text:'Личный водитель и персональный шеф-повар оплачены.'}
+            ]
+        };
+        
+        const state = {
+            persona: null, base: 500, firstCard: null, price: 35, comm: 17.5,
+            strat: null, conv: 0, xp: 0, rank: 'STARTER', income: 0, cards: 0,
+            matsTaken: false, campaigns: 0, ltv: CONFIG.ltvBase
+        };
+
+        const dom = {
+            rank: document.getElementById('hud-rank'), xp: document.getElementById('hud-xp'),
+            cards: document.getElementById('hud-cards'), income: document.getElementById('hud-income'),
+            screens: document.querySelectorAll('.screen'), baseSlider: document.getElementById('base-slider'),
+            baseVal: document.getElementById('base-val'), priceSlider: document.getElementById('price-slider'),
+            priceVal: document.getElementById('price-val'), commVal: document.getElementById('comm-val'),
+            cmpPrice: document.getElementById('cmp-price'), toast: document.getElementById('toast'),
+            achModal: document.getElementById('ach-modal'), achIcon: document.getElementById('ach-icon'),
+            achText: document.getElementById('ach-text'), statCards: document.getElementById('stat-cards'),
+            statIncome: document.getElementById('stat-income'), chart: document.getElementById('income-chart'),
+            feedText: document.getElementById('feed-text'), btnMats: document.getElementById('btn-mats'),
+            btnCamp: document.getElementById('btn-campaign'), promise: document.getElementById('promise-text'),
+            linkTg: document.getElementById('link-tg-self'), linkEmail: document.getElementById('link-email'),
+            cta: document.getElementById('cta-vladi')
+        };
+
+        const utils = {
+            fmt: n => '$' + Math.floor(n).toLocaleString(),
+            showToast: (m, t=2200) => { dom.toast.textContent = m; dom.toast.classList.add('show'); setTimeout(()=>dom.toast.classList.remove('show'), t); },
+            copyPromise: () => { navigator.clipboard.writeText(dom.promise.textContent).then(()=>utils.showToast('✅ Текст скопирован!')); },
+            randomFeed: () => CONFIG.feedNames[Math.floor(Math.random()*CONFIG.feedNames.length)]
+        };
+
+        const router = {
+            go(id) {
+                dom.screens.forEach(s => { if(s.classList.contains('active')) { s.style.opacity='0'; s.style.transform='translateY(20px) scale(0.98)'; setTimeout(()=>{ s.classList.remove('active'); s.style.display='none'; }, 350); }});
+                setTimeout(() => {
+                    const t = document.getElementById(id); t.style.display='block'; void t.offsetWidth; t.classList.add('active'); t.style.opacity='1'; t.style.transform='translateY(0) scale(1)';
+                    window.scrollTo({top:0, behavior:'smooth'}); ui.update(); state.screen = id;
+                }, 360);
+            }
+        };
+
+        const ui = {
+            update() {
+                dom.rank.textContent = state.rank;
+                dom.cards.textContent = `Карт: ${state.cards}`;
+                dom.income.textContent = utils.fmt(state.income);
+                const cur = CONFIG.ranks.find(r=>r.n===state.rank);
+                const nxt = CONFIG.ranks[CONFIG.ranks.indexOf(cur)+1] || cur;
+                const p = Math.min(100, ((state.xp-cur.x)/(nxt.x-cur.x))*100);
+                dom.xp.style.width = `${cur.n==='ELITE'?100:p}%`;
+            },
+            chartAnim(val) {
+                const bars = dom.chart.querySelectorAll('.chart-bar');
+                const maxH = 90;
+                const h2 = Math.min(maxH, (val / (state.base * state.conv * state.comm * 0.4)) * maxH);
+                const h3 = Math.min(maxH, h2 * 1.3);
+                bars[2].style.height = `${h2}%`; bars[3].style.height = `${h3}%`;
+                bars[2].classList.add('active'); bars[3].classList.add('active');
+            },
+            showAch() {
+                const tier = [...CONFIG.achTiers].reverse().find(t => state.income >= t.min);
+                if(tier) { dom.achIcon.textContent = tier.icon; dom.achText.textContent = tier.text; dom.achModal.classList.add('show'); }
+            }
+        };
+
+        const math = {
+            calcCampaign() {
+                const potential = state.base * state.conv;
+                const takeRate = 0.08 + (state.campaigns * 0.04);
+                const newCards = Math.floor(potential * takeRate);
+                const newIncome = newCards * state.comm;
+                return { cards: newCards, income: newIncome };
+            },
+            project() {
+                const m3 = state.income;
+                const m12 = m3 * 4 * state.ltv;
+                return { m3, m12, lost: m12 / 365 };
+            }
+        };
+
+        const logic = {
+            addXP(n) {
+                state.xp += n;
+                const nr = [...CONFIG.ranks].reverse().find(r=>state.xp>=r.x);
+                if(nr && nr.n!==state.rank) { state.rank=nr.n; utils.showToast(`🏆 Ранг: ${state.rank}`); }
+                ui.update();
+            },
+            setPersona(type, base, el) {
+                state.persona=type; state.base=base; dom.baseSlider.value=base; dom.baseVal.textContent=base;
+                this.addXP(50); el.classList.add('selected');
+                setTimeout(()=>router.go('s3'), 300);
+            },
+            setFirstCard(choice, el) {
+                // FIX: Explicit state tracking, visual feedback, and routing
+                state.firstCard = choice;
+                document.querySelectorAll('#s3 .opt-card').forEach(c => c.classList.remove('selected'));
+                el.classList.add('selected');
+                
+                if(choice === 'self') {
+                    this.addXP(100);
+                    utils.showToast('🎖 Ачивка «Самотестер» получена!');
+                } else {
+                    this.addXP(40);
+                }
+                
+                setTimeout(()=>router.go('s4'), 400);
+            },
+            setStrategy(type, conv, el) {
+                state.strat=type; state.conv=conv; this.addXP(80); el.classList.add('selected');
+                const init = math.calcCampaign();
+                state.cards = init.cards; state.income = init.income;
+                dom.statCards.textContent = state.cards; dom.statIncome.textContent = utils.fmt(state.income);
+                setTimeout(()=>router.go('s5'), 300);
+            },
+            getMaterials() {
+                if(state.matsTaken) return;
+                state.matsTaken = true; state.conv *= 1.12; state.ltv += 0.10;
+                this.addXP(120);
+                dom.btnMats.textContent = '✅ Материалы получены. Конверсия +12%';
+                dom.btnMats.disabled = true; dom.btnCamp.disabled = false;
+                ui.showAch(); utils.showToast('📦 Шаблоны рассылок и постов готовы');
+            },
+            runCampaign() {
+                state.campaigns++;
+                const res = math.calcCampaign();
+                state.cards += res.cards; state.income += res.income;
+                dom.statCards.textContent = state.cards; dom.statIncome.textContent = utils.fmt(state.income);
+                ui.chartAnim(state.income); this.addXP(45);
+                dom.feedText.textContent = `${utils.randomFeed()} выпустил ${res.cards} карт за час · LIVE`;
+                utils.showToast(`📢 Касание #${state.campaigns} запущено`);
+                if(state.campaigns >= 3) {
+                    dom.btnCamp.textContent = '🔥 Масштабировать базу';
+                    setTimeout(()=>{ router.go('s6'); logic.finalize(); }, 700);
+                }
+            },
+            finalize() {
+                const proj = math.project();
+                document.getElementById('fin-3m').textContent = utils.fmt(proj.m3);
+                document.getElementById('fin-12m').textContent = utils.fmt(proj.m12);
+                document.getElementById('lost-inc').textContent = utils.fmt(proj.lost)+'/день';
+
+                const today = new Date().toLocaleDateString('ru-RU', {day:'numeric', month:'long'});
+                dom.promise.textContent = `Я запускаю монетизацию базы ${state.base} человек ${today}.\nМоя цель на 3 месяца: ${utils.fmt(proj.m3)}.\nЯ беру материалы у Card.Club и делаю первое касание на этой неделе.\nРанг в симуляторе: ${state.rank}.`;
+                
+                const txt = encodeURIComponent(dom.promise.textContent);
+                dom.linkTg.href = `https://t.me/share/url?url=https://cardclubru.netlify.app&text=${txt}`;
+                dom.linkEmail.href = `mailto:partner@card.club?subject=Обещание партнёра&body=${txt}`;
+                
+                const ctaMsg = encodeURIComponent(`Привет! Я прошёл симулятор. Мой прогноз: ${utils.fmt(proj.m12)}/год. Готов получить материалы и настроить кабинет.`);
+                dom.cta.href = `https://t.me/Vladi_andr?text=${ctaMsg}`;
+
+                localStorage.setItem('cc_reminder', JSON.stringify({d: Date.now(), p: utils.fmt(proj.m3), r: state.rank}));
+            }
+        };
+
+        /* ================= EVENTS & INIT ================= */
+        dom.baseSlider.addEventListener('input', e => { dom.baseVal.textContent = e.target.value; });
+        dom.priceSlider.addEventListener('input', e => {
+            const v=parseInt(e.target.value); state.price=v; state.comm=v*0.5;
+            dom.priceVal.textContent=`$${v}`; dom.commVal.textContent=`$${v*0.5}`; dom.cmpPrice.textContent=v;
+        });
+
+        window.addEventListener('DOMContentLoaded', ()=>{
+            ui.update();
+            const rem = localStorage.getItem('cc_reminder');
+            if(rem) {
+                const d=JSON.parse(rem);
+                if((Date.now()-d.d)>5184000000) utils.showToast('🔔 Вы ставили цель 2 мес. назад. Проверьте результат!');
+            }
+        });
+
+        window.router=router; window.logic=logic; window.utils=utils;
+    </script>
+</body>
+</html>
